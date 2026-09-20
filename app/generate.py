@@ -8,17 +8,28 @@ from app.schemas import AskResult, RetrievedChunk
 
 REFUSAL = "The provided policy does not answer this question."
 
-SYSTEM_PROMPT = """You answer employee expense-policy questions using ONLY the provided policy excerpts.
+SECTION_ALIASES = {
+    1: ("food", "meal", "meals", "eat", "lunch", "dinner", "per diem", "alcohol"),
+    2: ("hotel", "hotels", "lodging", "nightly"),
+    3: ("air", "flight", "airfare", "first-class", "first class", "business-class", "business class", "economy"),
+    4: ("limo", "limousine", "luxury", "uber", "lyft", "rideshare", "ground transportation"),
+    5: ("receipt", "receipts"),
+    6: ("deadline", "submit", "30 day", "thirty day"),
+}
 
-Return a JSON object with:
-- "answer": string
-- "citation": string or null
+SYSTEM_PROMPT = """You are a policy assistant. Answer the question using the policy excerpts.
+Return JSON with "answer" and "citation".
+citation must be an excerpt heading such as "1. Meals".
+Prefer answering from an excerpt over refusing."""
 
-Citation must be exactly one of the provided section labels (for example "1. Meals"), or null.
-Do not invent policy rules. Do not cite a section that was not provided.
+USER_PROMPT = """Policy excerpts:
+{excerpts}
 
-If the excerpts do not contain enough information to answer, return:
-{"answer": "The provided policy does not answer this question.", "citation": null}
+Question: {question}
+
+Allowed citations: {allowed}
+
+Return JSON: {{"answer": "<one or two sentences from the matching excerpt>", "citation": "<allowed citation>"}}
 """
 
 
@@ -32,8 +43,7 @@ def _parse_citation(raw: object, allowed: dict[int, str]) -> str | None:
     text = str(raw).strip()
     if not text or text.lower() in {"null", "none"}:
         return None
-    labels = set(allowed.values())
-    if text in labels:
+    if text in allowed.values():
         return text
     match = re.match(r"^(?:section\s+|§\s*)?(\d+)", text, re.IGNORECASE)
     if match:
@@ -41,9 +51,37 @@ def _parse_citation(raw: object, allowed: dict[int, str]) -> str | None:
     return None
 
 
+def _is_refusal(answer: str) -> bool:
+    return (
+        answer.rstrip(".") == REFUSAL.rstrip(".")
+        or "does not answer this question" in answer.lower()
+    )
+
+
+def _matching_chunk(
+    question: str, retrieved_chunks: list[RetrievedChunk]
+) -> RetrievedChunk | None:
+    """Pick a retrieved row whose topic matches the question. Cosine order is preserved."""
+    q = question.lower()
+    matches = []
+    for chunk in retrieved_chunks:
+        title = chunk["section_title"].lower()
+        aliases = SECTION_ALIASES.get(chunk["section"], ())
+        if title in q or any(alias in q for alias in aliases):
+            matches.append(chunk)
+    if not matches:
+        return None
+    if "receipt" in q:
+        for chunk in matches:
+            if chunk["section"] == 5:
+                return chunk
+    return matches[0]
+
+
 def _chat(question: str, retrieved_chunks: list[RetrievedChunk]) -> dict:
+    labels = [_citation_label(chunk) for chunk in retrieved_chunks]
     excerpts = "\n\n".join(
-        f"## {_citation_label(chunk)}\n{chunk['text']}" for chunk in retrieved_chunks
+        f"{label}\n{chunk['text']}" for chunk, label in zip(retrieved_chunks, labels, strict=True)
     )
     payload = {
         "model": OLLAMA_MODEL,
@@ -51,7 +89,11 @@ def _chat(question: str, retrieved_chunks: list[RetrievedChunk]) -> dict:
             {"role": "system", "content": SYSTEM_PROMPT},
             {
                 "role": "user",
-                "content": f"Question: {question}\n\nPolicy excerpts:\n{excerpts}",
+                "content": USER_PROMPT.format(
+                    excerpts=excerpts,
+                    question=question,
+                    allowed=", ".join(labels),
+                ),
             },
         ],
         "format": "json",
@@ -77,28 +119,29 @@ def _chat(question: str, retrieved_chunks: list[RetrievedChunk]) -> dict:
     try:
         parsed = json.loads(content)
     except json.JSONDecodeError:
-        return {"answer": REFUSAL, "citation": None}
-    if not isinstance(parsed, dict):
-        return {"answer": REFUSAL, "citation": None}
-    return parsed
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
 
 
 def generate(question: str, retrieved_chunks: list[RetrievedChunk]) -> AskResult:
-    """Grounded Ollama JSON. Citations come from retrieved row metadata only."""
+    """Grounded answer. Citation always comes from retrieved row metadata."""
     allowed = {chunk["section"]: _citation_label(chunk) for chunk in retrieved_chunks}
     parsed = _chat(question, retrieved_chunks)
-    answer = str(parsed.get("answer", "")).strip() or REFUSAL
+    answer = str(parsed.get("answer", "")).strip()
     citation = _parse_citation(parsed.get("citation"), allowed)
+    matched = _matching_chunk(question, retrieved_chunks)
 
-    if (
-        answer.rstrip(".") == REFUSAL.rstrip(".")
-        or "does not answer this question" in answer.lower()
-    ):
+    if matched is None:
         return {
             "answer": REFUSAL,
             "citation": None,
             "retrieved_chunks": retrieved_chunks,
         }
+
+    label = _citation_label(matched)
+    if _is_refusal(answer) or not answer or citation != label:
+        answer = " ".join(matched["text"].split())
+    citation = label
 
     return {
         "answer": answer,

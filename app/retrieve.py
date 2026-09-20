@@ -9,9 +9,9 @@ SELECT
     section,
     section_title,
     text,
-    (embedding <=> %s) AS distance
+    (embedding <=> %s::vector) AS distance
 FROM policy_chunks
-ORDER BY embedding <=> %s ASC
+ORDER BY embedding <=> %s::vector ASC
 LIMIT 3
 """
 
