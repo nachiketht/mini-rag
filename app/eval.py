@@ -10,11 +10,11 @@ OUTPUT_PATH = Path(__file__).resolve().parent.parent / "tests" / "output.json"
 ANSWERABLE = [
     ("How much can I spend on food each day?", 1, "Meals"),
     ("Can I book first-class airfare?", 3, "Airfare"),
-    ("Can I stay at a hotel that costs $250 per night?", 2, "Hotels"),
+    ("My hotel costs $250. What do I need?", 2, "Hotels"),
     ("Do I need a receipt for a $20 taxi?", 5, "Receipts"),
-    ("Can I expense a limousine upgrade?", 4, "Ground Transportation"),
+    ("Can I claim a limousine upgrade?", 4, "Ground Transportation"),
 ]
-GYM_QUESTION = "Are gym memberships reimbursable?"
+GYM_QUESTION = "Does the company reimburse gym memberships?"
 QUESTIONS = [question for question, _section, _title in ANSWERABLE] + [GYM_QUESTION]
 
 

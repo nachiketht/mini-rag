@@ -9,9 +9,8 @@ ollama serve
 In another terminal:
 
 ```bash
-ollama pull llama3.2:3b
-docker compose up -d
-docker compose exec -T postgres psql -U postgres -d mini_rag < sql/001_init.sql
+ollama pull qwen3:8b
+bash scripts/ensure-postgres.sh
 cp .env.example .env
 python3 -m venv .venv
 source .venv/bin/activate

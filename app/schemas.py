@@ -1,7 +1,7 @@
 from typing import TypedDict
 
 
-class RetrievedChunk(TypedDict):
+class PolicyChunk(TypedDict):
     chunk_id: str
     document: str
     version: str
@@ -11,7 +11,19 @@ class RetrievedChunk(TypedDict):
     distance: float
 
 
+class Citation(TypedDict):
+    document: str
+    version: str
+    section: str
+    text: str
+
+
+class RetrievedChunk(TypedDict):
+    section: str
+    distance: float
+
+
 class AskResult(TypedDict):
     answer: str
-    citation: str | None
+    citation: Citation | None
     retrieved_chunks: list[RetrievedChunk]

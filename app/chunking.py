@@ -2,10 +2,7 @@ import re
 
 HEADING_RE = re.compile(r"^## (\d+)\. (.+)$", re.MULTILINE)
 H1_RE = re.compile(r"^# (.+?)\s+[—–-]\s+Version\s+(\S+)", re.MULTILINE)
-
-
-def _slug(title: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
+CHUNK_ID_PREFIX = "expense-policy"
 
 
 def split(markdown: str) -> list[dict]:
@@ -13,7 +10,7 @@ def split(markdown: str) -> list[dict]:
     if not h1:
         raise ValueError("Could not parse document title and version from H1")
 
-    document = _slug(h1.group(1))
+    document = h1.group(1).strip()
     version = h1.group(2).strip()
     headings = list(HEADING_RE.finditer(markdown))
     if not headings:
@@ -27,7 +24,7 @@ def split(markdown: str) -> list[dict]:
         end = headings[i + 1].start() if i + 1 < len(headings) else len(markdown)
         chunks.append(
             {
-                "chunk_id": f"{document}:v{version}:section-{section}",
+                "chunk_id": f"{CHUNK_ID_PREFIX}:v{version}:section-{section}",
                 "document": document,
                 "version": version,
                 "section": section,

@@ -25,6 +25,7 @@ def run(adapter: DatabaseAdapter, policy_path: Path | None = None) -> int:
 
     with adapter.connect() as conn:
         with conn.cursor() as cur:
+            cur.execute("TRUNCATE policy_chunks")
             for chunk, embedding in zip(chunks, embeddings, strict=True):
                 cur.execute(
                     UPSERT_SQL,

@@ -1,5 +1,6 @@
 from app.db import DatabaseAdapter
 from app.embeddings import embed_query
+from app.schemas import PolicyChunk
 
 SEARCH_SQL = """
 SELECT
@@ -16,7 +17,7 @@ LIMIT 3
 """
 
 
-def search(question: str, adapter: DatabaseAdapter) -> list[dict]:
+def search(question: str, adapter: DatabaseAdapter) -> list[PolicyChunk]:
     query_vector = embed_query(question)
     with adapter.connect() as conn:
         with conn.cursor() as cur:
