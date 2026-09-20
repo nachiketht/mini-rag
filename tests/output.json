@@ -1,7 +1,7 @@
 [
   {
     "question": "How much can I spend on food each day?",
-    "answer": "You can claim up to $65 per day for meals.",
+    "answer": "You can spend up to $65 per day on meals while traveling overnight.",
     "citation": "1. Meals",
     "retrieved_chunks": [
       {
@@ -35,7 +35,7 @@
   },
   {
     "question": "Can I book first-class airfare?",
-    "answer": "Employees must purchase economy airfare. Business-class airfare requires written approval from a vice president.",
+    "answer": "No, you must purchase economy airfare, and business-class airfare requires written approval from a vice president.",
     "citation": "3. Airfare",
     "retrieved_chunks": [
       {
@@ -69,7 +69,7 @@
   },
   {
     "question": "Can I stay at a hotel that costs $250 per night?",
-    "answer": "You can stay at a hotel, but the reimbursement is limited to $225 per night. Any costs above this amount will not be reimbursed.",
+    "answer": "No, the hotel rate exceeds the $225 per night limit for reimbursement.",
     "citation": "2. Hotels",
     "retrieved_chunks": [
       {
@@ -103,7 +103,7 @@
   },
   {
     "question": "Do I need a receipt for a $20 taxi?",
-    "answer": "No, you do not need a receipt for a $20 taxi ride as it is less than $25.",
+    "answer": "No, a receipt is not required for a $20 taxi ride.",
     "citation": "5. Receipts",
     "retrieved_chunks": [
       {
@@ -137,7 +137,7 @@
   },
   {
     "question": "Can I expense a limousine upgrade?",
-    "answer": "Luxury vehicle upgrades are not reimbursable.",
+    "answer": "No, luxury vehicle upgrades are not reimbursable according to policy.",
     "citation": "4. Ground Transportation",
     "retrieved_chunks": [
       {

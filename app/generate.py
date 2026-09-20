@@ -1,5 +1,4 @@
 import json
-import re
 import urllib.error
 import urllib.request
 
@@ -20,7 +19,9 @@ SECTION_ALIASES = {
 SYSTEM_PROMPT = """You are a policy assistant. Answer the question using the policy excerpts.
 Return JSON with "answer" and "citation".
 citation must be an excerpt heading such as "1. Meals".
-Prefer answering from an excerpt over refusing."""
+Prefer answering from an excerpt over refusing.
+Write one or two complete sentences. Do not copy the excerpt verbatim.
+Include any spending cap or approval exception from the excerpt."""
 
 USER_PROMPT = """Policy excerpts:
 {excerpts}
@@ -29,26 +30,12 @@ Question: {question}
 
 Allowed citations: {allowed}
 
-Return JSON: {{"answer": "<one or two sentences from the matching excerpt>", "citation": "<allowed citation>"}}
+Return JSON: {{"answer": "<one or two sentences answering the question>", "citation": "<allowed citation>"}}
 """
 
 
 def _citation_label(chunk: RetrievedChunk) -> str:
     return f"{chunk['section']}. {chunk['section_title']}"
-
-
-def _parse_citation(raw: object, allowed: dict[int, str]) -> str | None:
-    if raw is None:
-        return None
-    text = str(raw).strip()
-    if not text or text.lower() in {"null", "none"}:
-        return None
-    if text in allowed.values():
-        return text
-    match = re.match(r"^(?:section\s+|§\s*)?(\d+)", text, re.IGNORECASE)
-    if match:
-        return allowed.get(int(match.group(1)))
-    return None
 
 
 def _is_refusal(answer: str) -> bool:
@@ -61,7 +48,6 @@ def _is_refusal(answer: str) -> bool:
 def _matching_chunk(
     question: str, retrieved_chunks: list[RetrievedChunk]
 ) -> RetrievedChunk | None:
-    """Pick a retrieved row whose topic matches the question. Cosine order is preserved."""
     q = question.lower()
     matches = []
     for chunk in retrieved_chunks:
@@ -124,27 +110,22 @@ def _chat(question: str, retrieved_chunks: list[RetrievedChunk]) -> dict:
 
 
 def generate(question: str, retrieved_chunks: list[RetrievedChunk]) -> AskResult:
-    """Grounded answer. Citation always comes from retrieved row metadata."""
-    allowed = {chunk["section"]: _citation_label(chunk) for chunk in retrieved_chunks}
     parsed = _chat(question, retrieved_chunks)
     answer = str(parsed.get("answer", "")).strip()
-    citation = _parse_citation(parsed.get("citation"), allowed)
     matched = _matching_chunk(question, retrieved_chunks)
 
     if matched is None:
         return {
             "answer": REFUSAL,
             "citation": None,
-            "retrieved_chunks": retrieved_chunks[:1],
+            "retrieved_chunks": retrieved_chunks,
         }
 
     label = _citation_label(matched)
-    if _is_refusal(answer) or not answer or citation != label:
+    if _is_refusal(answer) or not answer:
         answer = " ".join(matched["text"].split())
-    citation = label
-
     return {
         "answer": answer,
-        "citation": citation,
-        "retrieved_chunks": [matched],
+        "citation": label,
+        "retrieved_chunks": retrieved_chunks,
     }

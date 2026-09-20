@@ -19,12 +19,10 @@ QUESTIONS = [question for question, _section, _title in ANSWERABLE] + [GYM_QUEST
 
 
 def run(adapter: DatabaseAdapter, output_path: Path | None = None) -> list[dict]:
-    """Ask all required questions and write tests/output.json."""
     path = output_path or OUTPUT_PATH
-    results: list[dict] = []
+    results = []
     for question in QUESTIONS:
-        hits = search(question, adapter)
-        result = generate(question, hits)
+        result = generate(question, search(question, adapter))
         results.append({"question": question, **result})
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")

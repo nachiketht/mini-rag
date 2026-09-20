@@ -20,9 +20,7 @@ ON CONFLICT (chunk_id) DO UPDATE SET
 
 
 def run(adapter: DatabaseAdapter, policy_path: Path | None = None) -> int:
-    """Read policy.md, chunk, embed text only, upsert into policy_chunks."""
-    path = policy_path or POLICY_PATH
-    chunks = split(path.read_text(encoding="utf-8"))
+    chunks = split((policy_path or POLICY_PATH).read_text(encoding="utf-8"))
     embeddings = embed_texts([chunk["text"] for chunk in chunks])
 
     with adapter.connect() as conn:

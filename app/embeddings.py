@@ -11,7 +11,6 @@ def _model() -> SentenceTransformer:
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
-    """Encode texts with MiniLM. Returns full 384-d L2-normalized vectors."""
     vectors = _model().encode(texts, normalize_embeddings=True)
     return [vector.tolist() for vector in vectors]
 
