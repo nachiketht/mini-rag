@@ -9,7 +9,7 @@ ollama serve
 In another terminal:
 
 ```bash
-ollama pull qwen3:8b
+ollama pull qwen3:3b
 bash scripts/ensure-postgres.sh
 cp .env.example .env
 python3 -m venv .venv
