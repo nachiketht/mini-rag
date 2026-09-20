@@ -1,16 +1,26 @@
 import argparse
+import json
 
 from app.ingest import run as ingest_run
 from app.pgadapter import PgAdapter
+from app.retrieve import search
 
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="python -m app")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("ingest", help="Chunk, embed, and upsert the expense policy")
+    ask = sub.add_parser("ask", help="Retrieve the top-3 policy chunks for a question")
+    ask.add_argument("question")
 
     args = parser.parse_args(argv)
+    adapter = PgAdapter()
 
     if args.command == "ingest":
-        count = ingest_run(PgAdapter())
+        count = ingest_run(adapter)
         print(f"Ingested {count} chunks")
+        return
+
+    if args.command == "ask":
+        hits = search(args.question, adapter)
+        print(json.dumps(hits, indent=2))
