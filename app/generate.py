@@ -67,8 +67,11 @@ def _chat(question: str, retrieved_chunks: list[RetrievedChunk]) -> dict:
     try:
         with urllib.request.urlopen(request, timeout=120) as response:
             body = json.loads(response.read().decode("utf-8"))
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
-        return {"answer": REFUSAL, "citation": None}
+    except (urllib.error.URLError, TimeoutError) as exc:
+        raise RuntimeError(f"Ollama request failed at {OLLAMA_HOST}") from exc
+
+    if body.get("error"):
+        raise RuntimeError(f"Ollama error: {body['error']}")
 
     content = body.get("message", {}).get("content", "")
     try:
