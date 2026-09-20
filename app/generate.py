@@ -135,7 +135,7 @@ def generate(question: str, retrieved_chunks: list[RetrievedChunk]) -> AskResult
         return {
             "answer": REFUSAL,
             "citation": None,
-            "retrieved_chunks": retrieved_chunks,
+            "retrieved_chunks": retrieved_chunks[:1],
         }
 
     label = _citation_label(matched)
@@ -146,5 +146,5 @@ def generate(question: str, retrieved_chunks: list[RetrievedChunk]) -> AskResult
     return {
         "answer": answer,
         "citation": citation,
-        "retrieved_chunks": retrieved_chunks,
+        "retrieved_chunks": [matched],
     }

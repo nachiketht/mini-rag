@@ -68,4 +68,4 @@ def test_gym_refusal_has_no_citation(adapter: PgAdapter) -> None:
     result = generate(GYM_QUESTION, hits)
     assert result["answer"] == REFUSAL
     assert result["citation"] is None
-    assert len(result["retrieved_chunks"]) == 3
+    assert len(result["retrieved_chunks"]) == 1
